@@ -1,4 +1,9 @@
 <?php
+#$sql="UPDATE `patent`.`patent_foreign` SET `f_abstract`=\"$a['abstract']\" WHERE `f_applicationid` LIKE '%".$applicationid."%'";
+$a['a'] = 'test';
+$sql = "UPDATE `patent`.`patent_foreign` SET `f_abstract`=\"$a['a']\" WHERE `f_applicationid` LIKE '%";
+echo 'etstate';
+exit;
 $goog['a'] = 'asd';
 unset($good['a']['b']);
 var_dump($good);exit;
