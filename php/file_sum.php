@@ -1,4 +1,4 @@
-! /usr/local/php5.4/bin/php
+#! /usr/local/php5.4/bin/php
 <?php
 $sDirScan = '/mnt/funplus/logs/fp_rstory/history/';
 $sFileSum = __DIR__.'/sha1sum.json';

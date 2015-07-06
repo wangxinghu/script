@@ -28,7 +28,7 @@ include_once(APP_PATH . 'helpers' . DIRECTORY_SEPARATOR . 'functions.php');
  */
 class FfsLog
 {
-    const LOG_LEVEL_FATAL   = 0x01;
+    const LOG_LEVEL_FATAL   = 0x0;
     const LOG_LEVEL_WARNING = 0x02;
     const LOG_LEVEL_NOTICE  = 0x04;
     const LOG_LEVEL_TRACE   = 0x08;
