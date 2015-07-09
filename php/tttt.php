@@ -1,4 +1,10 @@
 <?php
+$a = array('3' => 'a', '4' => 'b', '5' => 'c',);
+$b = array('6' => 'h', '7' => 'f', '8' => 'e',);
+var_dump(($a+$b));exit;
+asort($a);
+var_dump($a);
+exit;
 $a = '{aaa":"bbb"}';
 var_dump(json_decode($a, true));exit;
 $arrParam = array(

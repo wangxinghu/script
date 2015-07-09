@@ -44,7 +44,7 @@ class GreenHouse {
         return false;
     }
     public function normal() {
-        //echo 'start:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $start = microtime(true);
         $greenHouseData = array();
         foreach ($this->mapData as $oid => $line) {
@@ -54,7 +54,7 @@ class GreenHouse {
                 $greenHouseData[$oid] = $size;
             }
         }
-        //echo 'list'.microtime(true)."\n";
+        echo microtime(true)."\n";
         foreach ($this->mapData as $oid => $line) {
             if ($line['itemid'] == self::GID || $line['itemid'] == self::SGID || $line['itemid'] == self::TGID) {
                 continue;
@@ -67,62 +67,26 @@ class GreenHouse {
                 }
             }
         }
-        //echo 'end:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $end = microtime(true);
         $cost = number_format((($end - $start)*1000), 2, '.', '');
-        //echo 'normal_cost:'.$cost."\n";
-        file_put_contents('normal', var_export($greenHouseData, true));
-        return $cost;
-    }
-
-    public function dot() {
-        //echo 'start:'.microtime(true)."\n";
-        $start = microtime(true);
-        $greenHouseData = array();
-        $itemGrid = array();
-        foreach ($this->mapData as $oid => $line) {
-            if ($line['itemid'] == self::GID || $line['itemid'] == self::SGID || $line['itemid'] == self::TGID) {
-                $size = $this->getSize($line['x'], $line['y'], $line['f'], self::$greenhouseSize[$line['itemid']]['x'], self::$greenhouseSize[$line['itemid']]['y']);
-                $size['itemid'] = $line['itemid'];
-                $greenHouseData[$oid] = $size;
-            } else {
-                $itemGrid[$line['x'].'_'.$line['y']] = $oid;
-            }
-        }
-        //echo 'list:'.microtime(true)."\n";
-        foreach ($greenHouseData as $oid => $value) {
-            $oids = array();
-            for ($i = $value['minX']; $i < $value['maxX']; ++$i) {
-                for ($j = $value['minY']; $j < $value['maxY']; ++$j) {
-                    if (isset($itemGrid[$i.'_'.$j])) {
-                        $oids[] = $itemGrid[$i.'_'.$j];
-                    }
-                }
-            }
-            sort($oids);
-            $greenHouseData[$oid]['oids'] = $oids;
-        }
-        //echo 'end:'.microtime(true)."\n";
-        $end = microtime(true);
-        $cost = number_format((($end - $start)*1000), 2, '.', '');
-        //echo 'dot_cost:'.$cost."\n";
-        file_put_contents('dot', var_export($greenHouseData, true));
-        return $cost;
+        echo 'normal_cost:'.$cost."\n";
+        return $greenHouseData;
     }
 
     public function getGridIds($data, $gridData) {
         $ids = array();
-        foreach ($gridData as $oid) {
+        foreach ($gridData as $oid => $value) {
             $ret = $this->checkSize($this->mapData[$oid], $data);
             if ($ret === true) {
-                $ids[] = $oid;
+                $ids[$oid] = 1;
             }
         }
         return $ids;
     }
     //没有考虑边界问题
     public function grid($gridValue) {
-        //echo 'start:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $start = microtime(true);
         $greenHouseData = array();
         $gridData = array();
@@ -135,9 +99,9 @@ class GreenHouse {
             }
             $x = $line['x']>>$gridValue;
             $y = $line['y']>>$gridValue;
-            $gridData[$x.'_'.$y][] = $oid;
+            $gridData[$x.'_'.$y][$oid] = 1;
         }
-        //echo 'list:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         foreach ($greenHouseData as $oid => $data) {
             $arrOids = array();
             $minX = $data['minX']>>$gridValue;
@@ -158,25 +122,58 @@ class GreenHouse {
                     if (!empty($oids) && is_array($oids)) {
                         //$arrOids = array_merge($arrOids, $oids);
                         //$arrOids = $arrOids + $oids;
-                        foreach ($oids as $oidTemp) {
-                            $arrOids[] = $oidTemp;
+                        foreach ($oids as $oidTemp => $valueTemp) {
+                            $arrOids[$oidTemp] = 1;
                         }
                     }
                 }
             }
-            ksort($arrOids);
+            $arrOids = array_keys($arrOids);
+            sort($arrOids);
             $greenHouseData[$oid]['oids'] = $arrOids;
         }
-        //echo 'end:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $end = microtime(true);
         $cost = number_format((($end - $start)*1000), 2, '.', '');
-        //echo $gridValue.':'.$cost."\n";
-        file_put_contents('grid'.$gridValue, var_export($greenHouseData, true));
-        return $cost;
+        echo $gridValue.':'.$cost."\n";
+        return $greenHouseData;
+    }
+
+    public function dot() {
+        echo microtime(true)."\n";
+        $start = microtime(true);
+        $greenHouseData = array();
+        $itemGrid = array();
+        foreach ($this->mapData as $oid => $line) {
+            if ($line['itemid'] == self::GID || $line['itemid'] == self::SGID || $line['itemid'] == self::TGID) {
+                $size = $this->getSize($line['x'], $line['y'], $line['f'], self::$greenhouseSize[$line['itemid']]['x'], self::$greenhouseSize[$line['itemid']]['y']);
+                $size['itemid'] = $line['itemid'];
+                $greenHouseData[$oid] = $size;
+            } else {
+                $itemGrid[$line['x'].'_'.$line['y']] = $oid;
+            }
+        }
+        foreach ($greenHouseData as $oid => $value) {
+            $oids = array();
+            for ($i = $value['minX']; $i < $value['maxX']; ++$i) {
+                for ($j = $value['minY']; $j < $value['maxY']; ++$j) {
+                    if (isset($itemGrid[$i.'_'.$j])) {
+                        $oids[] = $itemGrid[$i.'_'.$j];
+                    }
+                }
+            }
+            sort($oids);
+            $greenHouseData[$oid]['oids'] = $oids;
+        }
+        //echo microtime(true)."\n";
+        $end = microtime(true);
+        $cost = number_format((($end - $start)*1000), 2, '.', '');
+        echo 'dot_cost:'.$cost."\n";
+        return $greenHouseData;
     }
 
     public function lines() {
-        //echo 'start:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $start = microtime(true);
         $greenHouseData = array();
         $greenHouseX = array();
@@ -199,7 +196,7 @@ class GreenHouse {
         }
         asort($greenHouseX);
         asort($greenHouseY);
-        //echo 'list:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $xoids = array();
         $begin = null;
         $end = null;
@@ -236,7 +233,7 @@ class GreenHouse {
             }
             $begin = $value;
         }
-        //echo 'x_list:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $yoids = array();
         $begin = null;
         $end = null;
@@ -273,38 +270,31 @@ class GreenHouse {
             }
             $begin = $value;
         }
-        //echo 'y_list:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         foreach ($greenHouseData as $oid => $data) {
             $arrOid = array_intersect_key($xoids[$oid]['oids'], $yoids[$oid]['oids']);
             $oids = array_keys($arrOid);
             sort($oids);
             $greenHouseData[$oid]['oids'] = $oids;
         }
-        //echo 'end:'.microtime(true)."\n";
+        //echo microtime(true)."\n";
         $end = microtime(true);
         $cost = number_format((($end - $start)*1000), 2, '.', '');
-        //echo 'line_cost:'.$cost."\n";
-        file_put_contents('lines', var_export($greenHouseData, true));
-        return $cost;
+        echo 'line_cost:'.$cost."\n";
+        return $greenHouseData;
     }
 }
 
 $obj = new GreenHouse();
-$i = $j = 100;
-$normal = $dot = $grid = $lines = 0.0;
-while($i--) {
-    $res = $obj->normal();
-    $normal += $res;
-    $res = $obj->dot();
-    $dot += $res;
-    $res = $obj->grid(3);
-    $grid += $res;
-    $res = $obj->lines();
-    $lines += $res;
+//$res = $obj->normal();
+$i = 10;
+while ($i--) {
+$res = $obj->grid(3);
+//file_put_contents('grid8', var_export($res, true));
+//$res = $obj->dot();
+//file_put_contents('dot', var_export($res, true));
+$res = $obj->lines();
 }
-echo 'avg_normal:'.$normal/$j."\n";
-echo 'avg_dot:'.$dot/$j."\n";
-echo 'avg_grid:'.$grid/$j."\n";
-echo 'avg_lines:'.$lines/$j."\n";
+//file_put_contents('lines', var_export($res, true));
 //print_r($res);
 exit;

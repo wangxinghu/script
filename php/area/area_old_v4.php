@@ -290,21 +290,9 @@ class GreenHouse {
 }
 
 $obj = new GreenHouse();
-$i = $j = 100;
-$normal = $dot = $grid = $lines = 0.0;
-while($i--) {
-    $res = $obj->normal();
-    $normal += $res;
-    $res = $obj->dot();
-    $dot += $res;
-    $res = $obj->grid(3);
-    $grid += $res;
-    $res = $obj->lines();
-    $lines += $res;
-}
-echo 'avg_normal:'.$normal/$j."\n";
-echo 'avg_dot:'.$dot/$j."\n";
-echo 'avg_grid:'.$grid/$j."\n";
-echo 'avg_lines:'.$lines/$j."\n";
+$res = $obj->normal();
+$res = $obj->dot();
+$res = $obj->grid(3);
+$res = $obj->lines();
 //print_r($res);
 exit;
