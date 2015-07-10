@@ -24,11 +24,13 @@ include_once(APP_PATH . 'helpers' . DIRECTORY_SEPARATOR . 'functions.php');
  *      FfsLog::trace("trace test");
  *      FfsLog::warning("warning test");
  *      FfsLog::fatal("fatal test");
+ *      FfsLog::addNotice("key1", $value);
+ *      FfsLog::unsetNotice("key1", $value);
  *
  */
 class FfsLog
 {
-    const LOG_LEVEL_FATAL   = 0x0;
+    const LOG_LEVEL_FATAL   = 0x01;
     const LOG_LEVEL_WARNING = 0x02;
     const LOG_LEVEL_NOTICE  = 0x04;
     const LOG_LEVEL_TRACE   = 0x08;
@@ -47,50 +49,29 @@ class FfsLog
 
     protected $strFormat;
     protected $strFormatWF;
-    protected $logPath;
     protected $intLevel;
-    protected $bolAutoRotate;
-    protected $isLocalLog;
-    protected $isRemoteLog;
-    protected $isCacheLog;
     protected $logFormatCachePath;
 
     protected $addNotice = array();
 
     private static $arrInstance = array();
     public static $current_instance;
+    private static $isWarning = false;
 
     //const DEFAULT_FORMAT = '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] uid[%u] snsid[%s] refer[%{referer}i] cookie[%{cookie}i]\t%S\t%M';
     //const DEFAULT_FORMAT_STD = '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]';
-    const DEFAULT_FORMAT = "level[%L] date[%t] ts[%d] file[%f] num[%N] host[%V] uri[%U] clientIP[%h] localIP[%A] logId[%l] uid[%u] snsid[%s] lang[%a] scene[%c] errno[%E] errmsg[%M]%S";
-    const DEFAULT_LOGPATH = "/mnt/htdocs/logs";
+    const DEFAULT_FORMAT = "level[%L] date[%t] ts[%d] file[%f] num[%N] host[%V] urlPath[%U] clientIP[%h] localIP[%A] logId[%l] uid[%u] snsid[%s] lang[%a] errno[%E] errmsg[%M]%S";
     const DEFAULT_LEVEL = 16;
     const DEFAULT_CACHE_PATH = '/tmp/ffslog/';
-    const DEFAULT_CACHE_MAX   = 10;
 
     private function __construct($app)
     {
         $structConf = (array)Ko::config('struct');
         $logConf = isset($structConf['log']) ? $structConf['log'] : array();
-        // 生成路径
-        $this->logPath = isset($logConf['logPath']) ? $logConf['logPath'] : self::DEFAULT_LOGPATH;
-        if(isset($logConf['logUseSubdir']) && $logConf['logUseSubdir'] == "yes") {
-            $this->logPath = $this->logPath."/$app";
-        }
-        //get log format
         $this->strFormat = isset($logConf['logFormat']) ?  $logConf['logFormat']  :  self::DEFAULT_FORMAT;
         $this->strFormatWF =  isset($logConf['logFormatWF']) ? $logConf['logFormatWF'] : $this->strFormat;
         $this->intLevel = isset($logConf['logLevel']) ? intval($logConf['logLevel']) : self::DEFAULT_LEVEL;
-        $this->bolAutoRotate = (isset($logConf['logAutoRotate']) && $logConf['logAutoRotate'] == 'yes') ? true : false;
-        $this->isLocalLog = (isset($logConf['isLocalLog']) && $logConf['isLocalLog'] == 'yes') ? true : false;
-        $this->isRemoteLog = (isset($logConf['isRemoteLog']) && $logConf['isRemoteLog'] == 'yes') ? true : false;
-        $this->cacheNum = isset($logConf['cacheNum']) ? intval($logConf['cacheNum']) : self::DEFAULT_CACHE_NUM;
         $this->logFormatCachePath = isset($logConf['logFormatCachePath']) ? $logConf['logFormatCachePath'] : self::DEFAULT_CACHE_PATH;
-
-        if($this->isLocalLog === true && !is_dir($this->logPath)) {
-            @mkdir($this->logPath, 0755, true);
-        }
-        //register_shutdown_function(array($this, 'flushAll'));
     }
 
     public static function getLogPrefix(){
@@ -161,21 +142,15 @@ class FfsLog
 
     public static function addNotice($key, $value)
     {
-        $log = self::getInstance();
+        $key = trim($key);
+        if (empty($key)) {
+            return;
+        }
         if ($value === null) {
             $value = '';
         }
-        /*
-        if(!isset($value)) {
-            $value = $key;
-            $key = '@';
-        }
 
-        $info = is_array($value) ? strtr(strtr(var_export($value, true),
-        array("  array (\n"=>'{', "array (\n"=>'{', ' => '=> ':',",\n"=> ',',)),
-        array('{  '=> '{', ":\n{"=>':{', '  ),  ' => '},', '),' => '},', ',)'=>'}', ',  '=>',',))
-        : $value;
-        */
+        $log = self::getInstance();
         $log->addNotice[$key] = $value;
     }
 
@@ -184,8 +159,8 @@ class FfsLog
             return;
         }
         $log = self::getInstance();
-        if (isset($log->addNotice[$key])) {
-            unset ($log->addNotice[$key]);
+        if (is_array($log->addNotice) && isset($log->addNotice[$key])) {
+            unset($log->addNotice[$key]);
         }
     }
     // 生成logid
@@ -227,6 +202,12 @@ class FfsLog
     {
         if( $intLevel > $this->intLevel || !isset(self::$arrLogLevels[$intLevel]) ) {
             return;
+        }
+        if ($intLevel === self::LOG_LEVEL_FATAL || $intLevel === self::LOG_LEVEL_WARNING) {
+            self::$isWarning = true;
+        }
+        if ($arrArgs !== null) {
+            $arrArgs = array('body' => (array)$arrArgs,);
         }
         $this->time = strftime('%y-%m-%d %H:%M:%S');
         $this->ts = time();
@@ -281,19 +262,16 @@ class FfsLog
         $arrLog = $this->getLogString($format);
         $arrLog['arr'] = array_merge($arrLog['arr'], $this->current_args);
 
-        // write to cache
-        $prefix = self::getLogPrefix();
-        if ( ($intLevel & self::LOG_LEVEL_WARNING) || ($intLevel & self::LOG_LEVEL_FATAL) ) {
-            $key = $prefix . 'wf' ;
-        } else {
-            $key = $prefix;
+        if (empty(LogRoute::$logRoute) || !isset(LogRoute::$logRoute[self::$arrLogLevels[$intLevel]])) {
+            return;
         }
-        $this->cache[$key][] = $arrLog;
-
-        if (count($this->cache[$key]) >= $this->cacheNum) {
-            $this->flush($key);
+        foreach (LogRoute::$logRoute[self::$arrLogLevels[$intLevel]] as $class => $value) {
+            if (class_exists($class)) {
+                $model = new $class($value, $arrLog['arr']);
+                $model->send();
+            }
         }
-
+        return;
     }
 
     // added support for self define format
@@ -316,7 +294,7 @@ class FfsLog
         $dataPath = $this->logFormatCachePath;
         $filename = $dataPath . $md5val.'.php';
         if (!file_exists($filename)) {
-            $tmp_filename = $filename . '.' . posix_getpid() . '.' . rand();
+            $tmp_filename = $filename . '.' . getmypid() . '.' . rand();
             if (!is_dir($dataPath)) {
                 mkdir($dataPath, 0755, true);
             }
@@ -402,7 +380,7 @@ class FfsLog
                 }
                 break;
             case 'U':
-                $action[] = "(isset(\$_SERVER['REQUEST_URI'])? \$_SERVER['REQUEST_URI'] : '')";
+                $action[] = "(isset(\$_SERVER['REQUEST_URI'])? parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH) : '')";
                 break;
             case 'v':
                 $action[] = "(isset(\$_SERVER['HOSTNAME'])? \$_SERVER['HOSTNAME'] : '')";
@@ -427,7 +405,7 @@ class FfsLog
                 $action[] = "(isset(ConfigModel::\$CURRENT_SNSID) ? ConfigModel::\$CURRENT_SNSID : '')";
                 break;
             case 'u':
-                $action[] = "(isset(ConfigModel::\$CURRENT_UID) ? ConfigModel::\$CURRENT_UID : '')";
+                $action[] = "(isset(ConfigModel::\$CURRENT_UID) ? trim(ConfigModel::\$CURRENT_UID) : '')";
                 break;
             case 'a':
                 $action[] = "(isset(ConfigModel::\$CURRENT_LANG) ? ConfigModel::\$CURRENT_LANG : '')";
@@ -482,7 +460,7 @@ class FfsLog
                     $action[] = '(isset($GLOBALS["argv"])? FfsLog::flattenArgs($GLOBALS["argv"]) : \'\')';
                     break;
                 case 'pid':
-                    $action[] = 'posix_getpid()';
+                    $action[] = 'getmypid()';
                     break;
                 case 'encoded_str_array':
                     $action[] = 'FfsLog::$current_instance->getStrArgsStd()';
@@ -532,7 +510,6 @@ class FfsLog
         return $str;
     }
 
-    //helper functions for use in generated code
     public static function flattenArgs($args) {
         if (!is_array($args)) return '';
         $str = array();
@@ -547,7 +524,7 @@ class FfsLog
         foreach($this->current_args as $k=>$v){
             if (is_array($v)) {
                 $v = json_encode($v);
-            } 
+            }
             $strArgs .= ' '.$k.'['.$v.']';
         }
         return $strArgs;
@@ -561,75 +538,47 @@ class FfsLog
         return implode(' ', $args);
     }
 
-    public function flush($key) {
-        if (empty($this->cache[$key])) {
+    public function printNotice() {
+        $uid = intval(ConfigModel::$CURRENT_UID);
+        if ($uid <= 0) {
             return;
         }
-
-        $localFp = null;
-
-        if ($this->isLocalLog === true && !empty($this->logPath)) {
-            $file =  $this->logPath . "/$key.log";
-            if($this->bolAutoRotate) {
-                $file .= '.'.date('YmdH');
+        $isNotice = false;
+        $user_log=(array)Ko::config('user_log');
+        $structConf = (array)Ko::config('struct');
+        while (1) {
+            if (isset($user_log['ids']) && in_array($uid, $user_log['ids'])) {
+                $isNotice = true;
+                break;
             }
-            $localFp = fopen($file , "a" );
+            $rate = isset($structConf['log']['noticeRate']) ? intval($structConf['log']['noticeRate']) : 0;
+            if (!empty($rate) && $uid%$rate === 0) {
+                $isNotice = true;
+                break;
+            }
+            if (isset($user_log['ranges']) && is_array($user_log['ranges'])) {
+                foreach ($user_log['ranges'] as $range) {
+                    $min = isset($range['min']) ? intval($range['min']) : 0;
+                    $max = isset($range['max']) ? intval($range['max']) : 0;
+                    if ($uid >= $min && $uid <= $max) {
+                        $isNotice = true;
+                        break;
+                    }
+                }
+            }
+            break;
         }
-
-        foreach ($this->cache[$key] as $_k => $arrLog) {
-            if (!isset($arrLog['arr']) || empty($arrLog['arr']) || !is_array($arrLog['arr'])) {
-                continue;
-            }
-            $content = json_encode($arrLog['arr']);
-            if ($this->isRemoteLog === true) {
-                $this->flushRemoteLog($key, $content);
-            }
-            if ($this->isLocalLog === true && $localFp) {
-                fwrite( $localFp , $content."\n");
-            }
-            unset($this->cache[$key][$_k]);
-        }
-
-        unset($this->cache[$key]);
-
-        if($localFp) {
-            fclose($localFp);
-        }
-    }
-
-    public function flushRemoteLog($key, $content) {
-        if (empty($key) || empty($content) ) {
+        if ($isNotice === false) {
             return;
         }
-        $configStruct = (array) Ko::config('struct');
-        if (isset($configStruct['log']['als']) && $configStruct['log']['als'] == 'yes') {
-            include_once (SYS_PATH . DIRECTORY_SEPARATOR . 'alsLog.php');
-            $als_model=new alsLog();
-            $als_model->writeAls($key, $content);
-        }
-        if (isset($configStruct['log']['fluentd']) && $configStruct['log']['fluentd'] == 'yes') {
-            include_once (SYS_PATH . DIRECTORY_SEPARATOR . 'fluentdLog.php');
-            $fluentd=new fluentdLog();
-            $metric_name = isset($configStruct['fluentd']['metric_name_pre']) ? $configStruct['fluentd']['metric_name_pre'] : '';
-            $res=$fluentd->writeString($metric_name.$name, $content);
-        }
-    }
-
-    public static function setUid($uid) {
-        self::$uid = $uid;
-    }
-
-    public static function setSession($sid) {
-        self::$sid = $sid;
-    }
-
-    public function flushAll() {
-        FfsLog::addNotice('aaa', array('bbb'=>array('ccc'=>2, 'ddd'=>3)));
-        FfsLog::addNotice('aaa', 'ddd');
-        FfsLog::unsetNotice('aaa');
-        FfsLog::notice('test', 10, array('bbb'=>array('ccc'=>2, 'ddd'=>3)));
-        if ($this->cache) foreach ($this->cache as $_k => $_v) {
-            $this->flush($_k);
-        }
+        $post = isset($_POST) ? $_POST : array();
+        $get = isset($_GET) ? $_GET : array();
+        $param = array_merge($get, $post);
+        $response = ob_get_contents();
+        $GLOBALS['notice_end_time'] = microtime(true);
+        $cost = number_format((($GLOBALS['notice_end_time']-$GLOBALS['notice_start_time'])*1000), 2, '.', '');
+        FfsLog::addNotice('cost', $cost);
+        $errno = (self::$isWarning === true) ? 1 : 0;
+        FfsLog::notice('', $errno, array('param' => $param, 'response' => $response));
     }
 }
