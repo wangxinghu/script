@@ -1,64 +1,49 @@
 <?php
+
+$a_ticket = 2;
+$b_ticket = 4;
+$ticket=ceil(16/10+8/2);
+var_dump(intval($ticket));
+exit;
+$a = array('a', 'b',);
+$vote = 0;
+foreach ($a as $value) {
+    $vote += intval(${$value.'_ticket'});
+}
+print_r($vote);
+exit;
+var_dump(floatval($a['a']));
+var_dump(floatval($a['b']));
+exit;
+array_shift($a);
+var_dump($a);
+exit;
+sleep(10000);
+exit;
+$json = file_get_contents(dirname(__FILE__).'/get-bi-metadata.json');
+exit;
+$a = array(1,2);
+array_shift($a);
+array_push($a, 3);
+var_dump(current($a));
+exit;
 $a = array('3' => 'a', '4' => 'b', '5' => 'c',);
 $i = 0;
 while (1) {
-$i++;
-sleep(10);
+    $i++;
+    sleep(10);
 }
 exit;
 $b = array('6' => 'h', '7' => 'f', '8' => 'e',);
-var_dump(($a+$b));exit;
+var_dump(($a + $b));
+exit;
 asort($a);
 var_dump($a);
 exit;
 $a = '{aaa":"bbb"}';
-var_dump(json_decode($a, true));exit;
-$arrParam = array(
-'map_move' => array(
-array(
-    'oid' => '12',
-    'x' => '12',
-    'y' => '12',
-    'f' => '0',
-),
-array(
-    'oid' => '13',
-    'x' => '13',
-    'y' => '13',
-    'f' => '0',
-),
-),
-'hub' => array(
-'in' => array(
-    '12',
-    '13',
-),
-'out' => array(
-    '12',
-    '13',
-),
-),
-'warehouse' => array(
-'in' => array(
-    '12',
-    '13',
-),
-'out' => array(
-    '12',
-    '13',
-),
-),
-'decoration_warehouse' => array(
-'in' => array(
-    '12',
-    '13',
-),
-'out' => array(
-    '12',
-    '13',
-),
-),
-);
+var_dump(json_decode($a, true));
+exit;
+$arrParam = array('map_move' => array(array('oid' => '12', 'x' => '12', 'y' => '12', 'f' => '0',), array('oid' => '13', 'x' => '13', 'y' => '13', 'f' => '0',),), 'hub' => array('in' => array('12', '13',), 'out' => array('12', '13',),), 'warehouse' => array('in' => array('12', '13',), 'out' => array('12', '13',),), 'decoration_warehouse' => array('in' => array('12', '13',), 'out' => array('12', '13',),),);
 
 $str = json_encode($arrParam);
 print_r($str);
@@ -66,36 +51,37 @@ print_r("\n");
 print_r(urldecode($str));
 exit;
 
-
-
-function escape ($value)
-{
-if (is_array($value)) {
-foreach ($value as &$val) {
-    $val = $this->escape($val);
+function escape($value) {
+    if (is_array($value)) {
+        foreach ($value as & $val) {
+            $val = $this->escape($val);
+        }
+        return implode(', ', $value);
+    } 
+    elseif (is_bool($value)) {
+        return (int)$value;
+    } 
+    elseif (is_int($value)) {
+        return $value;
+    } 
+    elseif (is_float($value)) {
+        return sprintf('%F', $value);
+    }
+    return "'" . addcslashes($value, "\000\n\r\\'\"\032") . "'";
 }
-return implode(', ', $value);
-} elseif (is_bool($value)) {
-return (int) $value;
-} elseif (is_int($value)) {
-return $value;
-} elseif (is_float($value)) {
-return sprintf('%F', $value);
-}
-return "'" . addcslashes($value, "\000\n\r\\'\"\032") . "'";
-}
 
-$a = array('a'=>'b', 'c'=>2);
+$a = array('a' => 'b', 'c' => 2);
 var_dump(serialize($a));
 
 $str = serialize($a);
 var_dump(escape($str));
 exit;
 $a = array('g' => 'a1', 'b' => 'b1', 'c' => 'c1');
-var_dump(implode(',', $a));exit;
+var_dump(implode(',', $a));
+exit;
 var_dump($a);
 exit;
-$b = array('c' => 2, );
+$b = array('c' => 2,);
 var_dump(array_merge($a, $b));
 exit;
 exit;
@@ -107,31 +93,35 @@ $str = '{"snsid":"ibdjzawuhoiggbbyogwlnwt","login_session":"65C7161B-EA28-48D4-8
 var_dump(json_decode($str, true));
 exit;
 $a = array('a' => 'b');
-foreach ($a as $key => &$value) {
-$value = 'c';
+foreach ($a as $key => & $value) {
+    $value = 'c';
 }
 $b = array('aa' => 'bb');
-foreach ($b as $key => &$value) {
-$value = 'cc';
+foreach ($b as $key => & $value) {
+    $value = 'cc';
 }
 $value = 'e';
 var_dump($a);
 var_dump($b);
 exit;
-var_dump(0 == '');exit;
+var_dump(0 == '');
+exit;
 $b = null;
 $a = unserialize($b) ? unserialize($b) : array();
-var_dump($a);exit;
+var_dump($a);
+exit;
 $a = new stdClass();
 $a->b = 'c';
 $key = 'b';
-var_dump(isset($a->{$ked}));exit;
-$a = array('a' => array('a1' => 'a2','a3' => 'a4'),'b' => array('b1' => 'b2','b3' => 'b4'));
+var_dump(isset($a->{$ked}));
+exit;
+$a = array('a' => array('a1' => 'a2', 'a3' => 'a4'), 'b' => array('b1' => 'b2', 'b3' => 'b4'));
 
-foreach ($a as $key => &$value) {
-$value = (object)$value;
+foreach ($a as $key => & $value) {
+    $value = (object)$value;
 }
-var_dump($a['a']->a1);exit;
+var_dump($a['a']->a1);
+exit;
 $a = new stdClass();
 $a->a->a1 = 'a2';
 $a->a->a3 = 'a3';
@@ -141,24 +131,26 @@ $a->b->b3 = 'b3';
 $b = array('a' => array('aa' => 'bb', 'cc' => 'dd'));
 var_dump(array_merge_recursive($a, $b));
 exit;
-$a = array(12,23,34);
+$a = array(12, 23, 34);
 $b = array_fill(0, count($a), 1);
 $a = array_combine($a, $b);
 var_dump($a);
 exit;
 function testt(&$value, &$key) {
-$key = $value;
-$value = 1;
-var_dump($key, $value);
+    $key = $value;
+    $value = 1;
+    var_dump($key, $value);
 }
-array_walk($a,'testt');
+array_walk($a, 'testt');
 var_dump($a);
 exit;
 $a = new stdClass();
-var_dump(empty($a));exit;
+var_dump(empty($a));
+exit;
 $a = array('12' => 'a', '23' => 'b');
 $b = array('23' => array('hh'), '45' => array('gg'));
-var_dump(array_diff_key($b, $a));exit;
+var_dump(array_diff_key($b, $a));
+exit;
 $a = new stdClass();
 $a->b = array('ee' => 'ff');
 $a->c = $a->b;
@@ -168,44 +160,39 @@ exit;
 $a = 'a';
 $b = 'b';
 $a = $b = 'c';
-var_dump($a, $b);exit;
+var_dump($a, $b);
+exit;
 function strs($str1, $str2) {
-$num1 = strlen($str1);
-$num2 = strlen($str2);
-if ($num1 ==0 || $num2 ==0) {
-return false;
-}
-for ($i = 0; $i <= $num1-$num2; $i++) {
-if (substr($str1, $i, $num2) == $str2) {
-    return $i;
-}
-}
-return false;
+    $num1 = strlen($str1);
+    $num2 = strlen($str2);
+    if ($num1 == 0 || $num2 == 0) {
+        return false;
+    }
+    for ($i = 0; $i <= $num1 - $num2; $i++) {
+        if (substr($str1, $i, $num2) == $str2) {
+            return $i;
+        }
+    }
+    return false;
 }
 $str1 = 'bdacdeabc';
 $str2 = 'abc';
 var_dump(strs($str1, $str2));
 exit;
 
-
-
-$p = array(
-array('a', 'b', 'c', 'd'),
-array('e', 'f', 'g', 'h'),
-array('i', 'j', 'k', 'l'),
-);
+$p = array(array('a', 'b', 'c', 'd'), array('e', 'f', 'g', 'h'), array('i', 'j', 'k', 'l'),);
 function arrConvert($p) {
-$res = array();
-$lineNum = count($p);
-foreach ($p as $lNo => $arrLine) {
-foreach ($arrLine as $vNo => $strV) {
-    $res[$vNo][$lineNum-$lNo-1] = $strV;
-}
-}
-foreach ($res as $key => &$data) {
-ksort($res[$key]);
-}
-return $res;
+    $res = array();
+    $lineNum = count($p);
+    foreach ($p as $lNo => $arrLine) {
+        foreach ($arrLine as $vNo => $strV) {
+            $res[$vNo][$lineNum - $lNo - 1] = $strV;
+        }
+    }
+    foreach ($res as $key => & $data) {
+        ksort($res[$key]);
+    }
+    return $res;
 }
 $pC = arrConvert($p);
 var_dump($pC);
@@ -213,11 +200,10 @@ exit;
 
 $a = 1.13;
 $b = 100;
-$c = intval(($a*$b));
-$c = intval(round($a*$b-0.5));
+$c = intval(($a * $b));
+$c = intval(round($a * $b - 0.5));
 var_dump($c);
 exit;
-
 
 $arr = array(10, 20, 30);
 $b = 20;
@@ -232,20 +218,19 @@ $arr = array_merge($arr, array());
 var_dump($arr);
 exit;
 $b = array();
-$str = 'npc_'.$arr['a'];
-$b['npc_'.$arr['a']] = 3;
-var_dump($b);exit;
+$str = 'npc_' . $arr['a'];
+$b['npc_' . $arr['a']] = 3;
+var_dump($b);
+exit;
 function getUniqueToken() {
-$arrChars = array('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-'0','1','2','3','4','5','6','7','8','9');
-shuffle($arrChars);
-$arrKey = array_rand($arrChars, 8);
-$str = '';
-for ($i = 0; $i < 8; $i++) {
-$str .= $arrChars[$arrKey[$i]];
-}
-return $str;
+    $arrChars = array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    shuffle($arrChars);
+    $arrKey = array_rand($arrChars, 8);
+    $str = '';
+    for ($i = 0; $i < 8; $i++) {
+        $str.= $arrChars[$arrKey[$i]];
+    }
+    return $str;
 }
 var_dump(getUniqueToken());
 var_dump(getUniqueToken());
@@ -253,18 +238,9 @@ var_dump(getUniqueToken());
 var_dump(getUniqueToken());
 exit;
 function test(&$a) {
-$a[1]['a'] = 2;
+    $a[1]['a'] = 2;
 }
-$a = array(
-1 => array(
-'a' => 'a',
-'b' => 'b',
-),
-2 => array(
-'c' => 'c',
-'d' => 'd',
-),
-);
+$a = array(1 => array('a' => 'a', 'b' => 'b',), 2 => array('c' => 'c', 'd' => 'd',),);
 test($a);
 var_dump($a);
 exit;
@@ -277,23 +253,30 @@ unset($a[2]);
 var_dump($a);
 exit;
 if ($tt['sdf'] === null) {
-echo 'succ';
+    echo 'succ';
 }
 exit;
-$total=10;//红包总额
-$num=8;// 分成8个红包，支持8人随机领取
-$min=0.01;//每个人最少能收到0.01元
+$total = 10;
 
-for ($i=1;$i<$num;$i++)
-{
-$safe_total=($total-($num-$i)*$min)/($num-$i);//随机安全上限
-echo $safe_total . "\t";
-$money=mt_rand($min*100,$safe_total*100)/100;
-$money = 0.01;
-$total=$total-$money;
-echo '第'.$i.'个红包：'.$money.' 元，余额：'.$total.' 元 '."\n";
+//红包总额
+$num = 8;
+
+// 分成8个红包，支持8人随机领取
+$min = 0.01;
+
+//每个人最少能收到0.01元
+
+for ($i = 1; $i < $num; $i++) {
+    $safe_total = ($total - ($num - $i) * $min) / ($num - $i);
+    
+    //随机安全上限
+    echo $safe_total . "\t";
+    $money = mt_rand($min * 100, $safe_total * 100) / 100;
+    $money = 0.01;
+    $total = $total - $money;
+    echo '第' . $i . '个红包：' . $money . ' 元，余额：' . $total . ' 元 ' . "\n";
 }
-echo '第'.$num.'个红包：'.$total.' 元，余额：0 元'."\n";
+echo '第' . $num . '个红包：' . $total . ' 元，余额：0 元' . "\n";
 exit;
 unset($arr['0']);
 var_dump($arr);
